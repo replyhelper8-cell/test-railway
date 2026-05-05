@@ -1,4 +1,5 @@
 import os
+import socket
 from flask import Flask
 
 app = Flask(__name__)
@@ -15,6 +16,16 @@ def hello():
 def stats():
     global counter
     return "count =" + str(counter)
+
+@app.get("/dns-redis")
+def dns_redis():
+    hostname = "redis.railway.internal"
+    try:
+        result = socket.getaddrinfo(hostname, None)
+        addresses = list({r[4][0] for r in result})
+        return f"DNS check for {hostname}: {', '.join(addresses)}"
+    except socket.gaierror as e:
+        return f"DNS check for {hostname} failed: {e}", 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
