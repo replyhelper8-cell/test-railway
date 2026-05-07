@@ -1,31 +1,20 @@
 import os
 import socket
+import redis
 from flask import Flask
 
 app = Flask(__name__)
 
-counter = 0
+r = redis.from_url(os.environ.get("REDIS_URL"), decode_responses=True)
 
 @app.get("/")
 def hello():
-    global counter
-    counter += 1
+    r.incr("counter")
     return "hello railway"
 
 @app.get("/stats")
 def stats():
-    global counter
-    return "count =" + str(counter)
-
-@app.get("/dns-redis")
-def dns_redis():
-    hostname = "redis.railway.internal"
-    try:
-        result = socket.getaddrinfo(hostname, None)
-        addresses = list({r[4][0] for r in result})
-        return f"DNS check for {hostname}: {', '.join(addresses)}"
-    except socket.gaierror as e:
-        return f"DNS check for {hostname} failed: {e}", 500
+    return "count =" + r.get("counter")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
